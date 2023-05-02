@@ -744,3 +744,131 @@ RIGHT JOIN tabela_de_clientes A ON A.CPF = B.CPF;
 
 
 Apesar da consulta ligeiramente diferente, como invertemos as tabelas, o resultado é o mesmo que obtivemos com o LEFT JOIN.
+
+## FULL E CROSS JOIN
+
+Então, começaremos abrindo um novo script no MySQL Workbench e selecionando a tabela de vendedores:
+
+````ruby
+SELECT * FROM tabela_de_vendedores;
+````
+
+Uma das colunas do resultado é "BAIRRO", referente ao local onde o vendedor possui escritório. Consultando a tabela de clientes, 
+veremos que ela também contém esse campo:
+
+````ruby
+SELECT * FROM tabela_de_clientes;
+````
+
+Sabendo dessa relação entre as tabelas, criaremos uma seleção com JOIN:
+
+````ruby
+SELECT * FROM tabela_de_vendedores INNER JOIN tabela_de_clientes
+ON tabela_de_vendedores.BAIRRO = tabela_de_clientes.BAIRRO;
+
+````
+![Captura de tela 2023-05-01 214758](https://user-images.githubusercontent.com/104650333/235556291-544a4a59-9267-42da-96cc-258d63d21891.png)
+![image](https://user-images.githubusercontent.com/104650333/235556779-6fbc0500-1ecf-4ff2-aff8-b84da32fd7ce.png)
+
+````
+Note que nessa seleção não usamos alias! Em vez disso, utilizamos os próprios nomes das tabelas como prefixo, como em tabela_de_vendedores.
+BAIRRO. Inclusive, quando digitamos o ponto depois do nome da tabela, o MySql Workbench até mostra algumas sugestões de preenchimento para agilizar 
+o processo.
+````
+O retorno mostrará os clientes que estão em bairros onde há escritórios da empresa de sucos. Nessa consulta, obtemos somente 7 registros, 
+o que significa que 8 clientes estão em bairros que não têm escritório, pois no vídeo anterior descobrimos que são 15 clientes cadastrados no total.
+
+- No momento, essa seleção traz todos os campos das duas tabelas, então vamos melhorar essa organização e trazer somente os quatro campos que nos interessam:
+
+````ruby
+SELECT tabela_de_vendedores.BAIRRO,
+tabela_de_vendedores.NOME,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.NOME  FROM tabela_de_vendedores INNER JOIN tabela_de_clientes
+ON tabela_de_vendedores.BAIRRO = tabela_de_clientes.BAIRRO;
+````
+
+![Captura de tela 2023-05-01 215459](https://user-images.githubusercontent.com/104650333/235556894-14fca7f6-4adb-44e6-9fa4-a0b6c297eb99.png)
+
+- Para demonstrar um ponto interessante sobre os prefixos, acrescentaremos também a coluna "DE_FERIAS", da tabela de vendedores:
+
+````ruby
+SELECT tabela_de_vendedores.BAIRRO,
+tabela_de_vendedores.NOME,
+tabela_de_vendedores.DE_FERIAS,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.NOME  FROM tabela_de_vendedores INNER JOIN tabela_de_clientes
+ON tabela_de_vendedores.BAIRRO = tabela_de_clientes.BAIRRO;
+````
+
+![image](https://user-images.githubusercontent.com/104650333/235557548-371957f7-6b3c-4d6c-af3c-7d680c0eb6eb.png)
+
+- A coluna "DE_FERIAS" não existe na tabela de clientes, ela está presente apenas na de vendedores. Isso nos permite omitir o prefixo, pois o 
+MySQL consegue deduzir e localizar sozinho o campo a que nos referimos, já que ele só existe em uma tabela. No caso de "BAIRRO" e "NOME", 
+por exemplo, o prefixo é obrigatório para se fazer a distinção, pois são campos em comum nas duas tabelas que estamos usando:
+
+````ruby
+SELECT tabela_de_vendedores.BAIRRO,
+tabela_de_vendedores.NOME,DE_FERIAS,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.NOME  FROM tabela_de_vendedores INNER JOIN tabela_de_clientes
+ON tabela_de_vendedores.BAIRRO = tabela_de_clientes.BAIRRO;
+````
+
+![Captura de tela 2023-05-01 220459](https://user-images.githubusercontent.com/104650333/235557814-8a630e21-99ed-494d-980a-54d7c5e6985b.png)
+
+- A seguir, vamos rodar a consulta com LEFT JOIN:
+
+````ruby
+SELECT tabela_de_vendedores.BAIRRO,
+tabela_de_vendedores.NOME,
+DE_FERIAS,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.NOME  FROM tabela_de_vendedores LEFT JOIN tabela_de_clientes
+ON tabela_de_vendedores.BAIRRO = tabela_de_clientes.BAIRRO;
+````
+
+![Captura de tela 2023-05-01 220613](https://user-images.githubusercontent.com/104650333/235557939-826527dd-3b3e-4777-a755-a55595f0509d.png)
+
+Essa seleção retornará todos os vendedores e apenas os clientes correspondentes. Encontraremos, por exemplo, o registro da vendedora Roberta Martins, 
+cujo bairro (Copacabana) não tem correspondência na tabela de clientes. Chegamos a essa conclusão porque a terceira e a quarta coluna estão com valor 
+null. Ou seja, o seu escritório não está em um lugar estratégico, pois não há clientes cadastrados que comprem sucos nesse bairro.
+
+Substituindo o comando por RIGHT JOIN, o MySQL trará todos os clientes e apenas os vendedores correspondentes. Com esse resultado, é possível verificar 
+vários compradores que moram em bairros em que não há escritórios da empresa de sucos, como Água Santa e Brás - os três primeiros campos são nulos. 
+Esse tipo de análise seria interessante, por exemplo, para investigar onde há mais demanda para abrir um novo escritório.
+
+
+- Podemos ver todas essas informações ao mesmo tempo usando o FULL JOIN - todos os vendedores, inclusive os que tem escritórios nos bairros 
+onde não há compradores; e todos os clientes, inclusive os que moram em bairros em que não há escritórios da empresa de sucos:
+
+````ruby
+SELECT tabela_de_vendedores.BAIRRO,
+tabela_de_vendedores.NOME,
+DE_FERIAS,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.NOME  FROM tabela_de_vendedores FULL JOIN tabela_de_clientes
+ON tabela_de_vendedores.BAIRRO = tabela_de_clientes.BAIRRO;
+````
+
+Ao executar essa consulta, o programa vai alegar um erro. Como foi explicado no começo do curso, a linguagem SQL segue o padrão ANSI, que respeita 
+uma série de regras, mas nem todo gerenciador de banco de dados realiza 100% do que esse padrão especifica. O FULL JOIN está contido no padrão ANSI, 
+porém o MySQL não suporta esse comando. Ou seja, não conseguiremos fazer o FULL JOIN no MySQL Workbench. Existe, no entanto, uma alternativa para o 
+FULL JOIN que é fazer o LEFT JOIN e o RIGHT JOIN simultaneamente. Nesse momento, ainda não aprendemos como fazer essa união de consultas, então 
+vamos reservar esse erro e, mais adiante, quando estudarmos mais sobre o assunto, voltaremos a ele.
+
+- Para finalizar esse vídeo, vamos criar um exemplo com CROSS JOIN, lembrando que esse comando não requer que seja especificado o campo em comum 
+nem que seja escrito o termo CROSS JOIN:
+
+````ruby
+SELECT tabela_de_vendedores.BAIRRO,
+tabela_de_vendedores.NOME, 
+DE_FERIAS,
+tabela_de_clientes.BAIRRO,
+tabela_de_clientes.NOME FROM tabela_de_vendedores, tabela_de_clientes;
+````
+![Captura de tela 2023-05-01 221030](https://user-images.githubusercontent.com/104650333/235558354-810cbb88-ac19-4cb0-b570-294e3483a2db.png)
+![Captura de tela 2023-05-01 221113](https://user-images.githubusercontent.com/104650333/235558417-4d76e535-e1b2-4b44-88a5-bc5417125d2e.png)
+![Captura de tela 2023-05-01 221154](https://user-images.githubusercontent.com/104650333/235558488-e519e5d2-2e8c-4767-b526-a114c4ba97bd.png)
