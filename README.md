@@ -454,3 +454,293 @@ ORDER BY BAIRRO;
 Dessa forma, veremos que o retorno respeitará a ordem alfabética dos bairros, começando por Água Santa, Barra da Tijuca, Cidade Nova e assim por 
 diante. Essa última consulta é mais complexa, pois estamos agrupando, filtrando e ordenando dados em uma única seleção.
 
+## Having
+
+````ruby
+SELECT ESTADO, SUM(LIMITE_DE_CREDITO) as SOMA_LIMITE FROM tabela_de_clientes 
+GROUP BY ESTADO;
+````
+
+![Captura de tela 2023-05-01 203451](https://user-images.githubusercontent.com/104650333/235549386-59c1ac83-cda9-494d-9ab1-d5614b4ff007.png)
+
+O retorno mostrará que, no estado de São Paulo, temos o total de limite de crédito de R$810.000,00 e, no estado do Rio de Janeiro, R$995.000,00.
+
+- Agora, se nosso objetivo for listar apenas os estados cuja soma do limite de crédito for maior que R$900.000,00, parece natural que usemos a cláusula WHERE:
+
+````ruby
+SELECT ESTADO, SUM(LIMITE_DE_CREDITO) as SOMA_LIMITE FROM tabela_de_clientes
+WHERE SOMA_LIMITE > 900000
+GROUP BY ESTADO;
+````
+
+No entanto, ao tentar rodar essa consulta, obteremos um erro! O problema é que, quando o WHERE é aplicado, o agrupamento ainda não ocorreu. 
+
+- A solução será usar o HAVING, que virá depois do GROUP BY:
+
+````ruby
+SELECT ESTADO, SUM(LIMITE_DE_CREDITO) as SOMA_LIMITE FROM tabela_de_clientes
+GROUP BY ESTADO
+HAVING SUM(LIMITE_DE_CREDITO) > 900000;
+````
+
+![Captura de tela 2023-05-01 203811](https://user-images.githubusercontent.com/104650333/235549705-627b5ac6-0be2-4a07-8ee0-d4ac9374fed5.png)
+
+Ou seja, primeiro agrupamos e depois aplicamos a condição. Dessa vez, nossa consulta retornará com sucesso.
+
+Nesse último caso, usamos SUM(LIMITE_DE_CREDITO) tanto no SELECT quanto no HAVING, entretanto não há necessidade de sempre usar o mesmo critério. 
+
+- Para exemplificar, primeiro vamos selecionar as embalagens, o maior preço e o menor preço, agrupando-os pelo tipo de embalagem:
+
+````ruby
+SELECT EMBALAGEM, MAX(PRECO_DE_LISTA) as MAIOR_PRECO, 
+MIN(PRECO_DE_LISTA) as MENOR_PRECO FROM tabela_de_produtos 
+GROUP BY EMBALAGEM;
+````
+
+![Captura de tela 2023-05-01 204004](https://user-images.githubusercontent.com/104650333/235549870-c172dab2-eab7-4a43-86c4-dffe5966be60.png)
+
+- E, com o intuito de usar o HAVING, filtraremos esse resultado, buscando apenas os produtos cuja soma dos preços de lista seja menor ou igual a R$80,00:
+
+````ruby
+SELECT EMBALAGEM, MAX(PRECO_DE_LISTA) as MAIOR_PRECO, 
+MIN(PRECO_DE_LISTA) as MENOR_PRECO FROM tabela_de_produtos 
+GROUP BY EMBALAGEM
+HAVING SUM(PRECO_DE_LISTA) <= 80;
+````
+
+![Captura de tela 2023-05-01 204206](https://user-images.githubusercontent.com/104650333/235550083-3d02bc51-39c6-4aa6-8b49-23d861f7e92d.png)
+
+No SELECT utilizamos MAXe MIN, enquanto no HAVING usamos o SUM - essa consulta ilustra que não há necessidade de escolher os mesmos critérios. 
+No retorno, veremos que a embalagem PET não aparece mais, pois não satisfaz a nova condição que impomos (SUM(PRECO_DE_LISTA) <=80).
+
+- Para finalizar, vale lembrar que temos a opção de acrescentar mais condições ao HAVING, criando um filtro composto com os operadores OR e AND, por exemplo:
+
+````ruby
+SELECT EMBALAGEM, MAX(PRECO_DE_LISTA) as MAIOR_PRECO, 
+MIN(PRECO_DE_LISTA) as MENOR_PRECO FROM tabela_de_produtos 
+GROUP BY EMBALAGEM
+HAVING SUM(PRECO_DE_LISTA) <= 80 AND MAX(PRECO_DE_LISTA) >= 5;
+````
+
+![Captura de tela 2023-05-01 204417](https://user-images.githubusercontent.com/104650333/235550292-56dea452-96d6-453e-a655-cf19c3db20a1.png)
+
+Com essa nova condição (MAX(PRECO_DE_LISTA) >= 5), vamos notar que a embalagem "lata" também não aparecerá mais, já que seu valor máximo do preço de lista é R$4,56.
+
+## CASE
+
+A seguir, aprenderemos sobre a expressão CASE (em português, "caso"). Esse comando serve para se fazer testes em um ou mais campos e, quando 
+determinada condição for atendida, então seguiremos por um caminho, senão continuamos por outro.
+
+O CASE vem acompanhado dos termos WHEN (quando), THEN (então), ELSE (senão) e END (fim). Veja a seguir um exemplo da estrutura desse comando:
+
+- Digamos que nossa intenção é classificar os produtos entre "baratos", "em conta" ou "caros". Faremos uma consulta usando o comando CASE e o campo "PRECO_DE_LISTA":
+
+````ruby
+SELECT NOME_DO_PRODUTO, PRECO_DE_LISTA,
+CASE 
+    WHEN PRECO_DE_LISTA >= 12 THEN 'PRODUTO CARO'
+    WHEN PRECO_DE_LISTA >= 7 AND PRECO_DE_LISTA < 12 THEN 'PRODUTO EM CONTA'
+    ELSE 'PRODUTO BARATO' 
+END AS STATUS_PRECO 
+FROM tabela_de_produtos;
+````
+
+![Captura de tela 2023-05-01 204750](https://user-images.githubusercontent.com/104650333/235550656-56a2eebc-0d8a-43dc-a8be-8f473b9c891b.png)
+
+Ao final da seleção, coloca-se o END para encerrar o CASE e cria-se um alias. Ao rodar a consulta, teremos um retorno com as colunas 
+"NOME_DO_PRODUTO", "PRECO_DE_LISTA" e "STATUS_PRECO", com uma relação de quais produtos estão baratos, quais estão em conta e quais estão caros.
+
+- Aplicando uma das fórmulas que aprendemos na aula anterior, podemos fazer, por exemplo, uma seleção que apresenta a média (average) de preços 
+de produtos baratos, em conta ou caros, agrupados por tipo de embalagem:
+
+````ruby
+SELECT EMBALAGEM,
+CASE 
+    WHEN PRECO_DE_LISTA >= 12 THEN 'PRODUTO CARO'
+    WHEN PRECO_DE_LISTA >= 7 AND PRECO_DE_LISTA < 12 THEN 'PRODUTO EM CONTA'
+    ELSE 'PRODUTO BARATO' 
+END AS STATUS_PRECO, AVG(PRECO_DE_LISTA) AS PRECO_MEDIO
+FROM tabela_de_produtos
+GROUP BY EMBALAGEM, 
+CASE 
+    WHEN PRECO_DE_LISTA >= 12 THEN 'PRODUTO CARO'
+    WHEN PRECO_DE_LISTA >= 7 AND PRECO_DE_LISTA < 12 THEN 'PRODUTO EM CONTA'
+    ELSE 'PRODUTO BARATO' 
+END
+````
+
+![Captura de tela 2023-05-01 205023](https://user-images.githubusercontent.com/104650333/235550887-dfcc5172-1ad7-4f58-b480-78b36d15d405.png)
+
+Note que o CASE completo precisa ser inserido no GROUP BY.
+
+Ao analisar o retorno, podemos ver no primeiro registro que os sucos em garrafa que custam menos de R$7 (barato) tem uma média de preço de 
+R$5,23. No segundo registro, notamos que os PETs em conta tem uma média de preço de R$9,10, e assim por diante.
+
+Assim, notamos que é possível misturar vários tipos de comandos em um única seleção. Cabe ainda nessa consulta inserirmos um ORDER BY 
+EMBALAGEM ao final do script e o resultado será a mesma lista, porém respeitando a ordem alfabética dos tipos de embalagem. Com essa nova 
+organização, ficará mais fácil de verificar, por exemplo, que não existem embalagens PET baratas e que todos os sucos em lata custam menos 
+de R$7 (baratos).
+
+- É possível até incluir uma cláusula WHERE para filtrar somente os produtos com sabor de manga. Veja como fica a consulta completa:
+
+````ruby
+SELECT EMBALAGEM,
+CASE 
+    WHEN PRECO_DE_LISTA >= 12 THEN 'PRODUTO CARO'
+    WHEN PRECO_DE_LISTA >= 7 AND PRECO_DE_LISTA < 12 THEN 'PRODUTO EM CONTA'
+    ELSE 'PRODUTO BARATO' 
+END AS STATUS_PRECO, AVG(PRECO_DE_LISTA) AS PRECO_MEDIO
+FROM tabela_de_produtos
+WHERE sabor = 'Manga'
+GROUP BY EMBALAGEM, 
+CASE 
+    WHEN PRECO_DE_LISTA >= 12 THEN 'PRODUTO CARO'
+    WHEN PRECO_DE_LISTA >= 7 AND PRECO_DE_LISTA < 12 THEN 'PRODUTO EM CONTA'
+    ELSE 'PRODUTO BARATO' 
+END 
+ORDER BY EMBALAGEM;
+````
+
+![Captura de tela 2023-05-01 205211](https://user-images.githubusercontent.com/104650333/235551040-c5db9c60-10eb-46ec-a6e8-fcb5a0dd1b62.png)
+
+Nesse caso, podemos observar na primeira linha do resultado, por exemplo, que a média de preços de sucos de manga baratos vendidos em garrafas 
+é de R$5,17. Mesclando tudo que já estudamos nesse curso, já somos capazes de criar consultas bastante específicas e complexas.
+
+## JOIN
+
+Até agora, somente realizamos seleções de uma tabela por vez, no entanto, haverá ocasiões em que será necessário consultar informações que estão separadas, parte em uma tabela e parte em outra. Nesses contextos, aplicaremos os JOINs.
+
+A seguir, veremos alguns exemplos, usando duas tabelas:
+
+````RUBY
+SELECT * FROM tabela_de_vendedores A
+INNER JOIN notas_fiscais B
+ON A.MATRICULA = B.MATRICULA;
+````
+
+![Captura de tela 2023-05-01 210542](https://user-images.githubusercontent.com/104650333/235552425-f9cb8fef-0bf9-4f6f-9084-205622147ae1.png)
+
+Os campos em comum usados no JOIN não precisam ter o mesmo nome. O importante é que tenham o mesmo conteúdo para que a relação entre tabelas seja viável.
+
+O retorno mostrará todos os campos da tabela A e todos os campos da tabela B, unidos em um só resultado. Será possível ver os dados de cada nota 
+fiscal emitida, junto das informações do vendedor associado a ela.
+
+- Com essas duas tabelas, também podemos usar outros comandos com o JOIN, como o GROUP BY. Por exemplo, se nossa meta for descobrir quantas notas 
+fiscais cada vendedor emitiu:
+
+````RUBY
+SELECT A.MATRICULA, A.NOME, COUNT(*) FROM
+tabela_de_vendedores A
+INNER JOIN notas_fiscais B
+ON A.MATRICULA = B.MATRICULA
+GROUP BY A.MATRICULA, A.NOME;
+````
+
+![Captura de tela 2023-05-01 210805](https://user-images.githubusercontent.com/104650333/235552723-2fc467e8-8fed-4d78-815c-c89d5958eb2c.png)
+
+
+- O mesmo resultado será obtido se fizéssemos um CROSS JOIN entre essas tabelas e filtrássemos (com WHERE) apenas os registros que têm correspondência 
+no número da matrícula:
+
+````RUBY
+SELECT A.MATRICULA, A.NOME, COUNT(*) FROM
+tabela_de_vendedores A, notas_fiscais B
+WHERE A.MATRICULA = B.MATRICULA
+GROUP BY A.MATRICULA, A.NOME;
+````
+
+![Captura de tela 2023-05-01 211158](https://user-images.githubusercontent.com/104650333/235553053-5e379481-8d86-4af8-bfec-67972e8954c3.png)
+
+Entre essas duas opções, recomendo o uso da primeira, porque com o INNER JOIN é mais fácil de compreender as junções (principalmente quando ficam complexas) 
+e também por ser a forma mais moderna. A segunda opção era comum há uns 20 anos, quando estruturas como INNER JOIN, LEFT JOIN e RIGHT JOIN ainda não 
+existiam, e há quem ainda opte por ela, mas eu particularmente prefiro o INNER JOIN.
+
+## LEFT E RIGHT JOIN
+
+Vamos abrir o MySQL Workbench, criar um novo script e começar com uma seleção que trará a contagem de clientes cadastrados:
+
+````RUBY
+SELECT COUNT(*) FROM tabela_de_clientes;
+````
+
+![Captura de tela 2023-05-01 212257](https://user-images.githubusercontent.com/104650333/235554030-f3ca5a7a-1a7c-481b-b57a-5af75dfdf671.png)
+
+````
+Lembrete: quando omitimos os campos selecionados e somente usamos uma fórmula, não há necessidade de usar o GROUP BY. É o que acabamos de fazer com a fórmula COUNT.
+````
+O retorno revela que existem 15 clientes cadastrados.
+
+- Em seguida, vamos consultar para quantas pessoas foram emitidas notas fiscais, verificando a quantidade de CPFs diferentes que aparecem na tabela de notas fiscais:
+
+````RUBY
+SELECT CPF, COUNT(*) FROM notas_fiscais GROUP BY CPF;
+````
+
+![Captura de tela 2023-05-01 212746](https://user-images.githubusercontent.com/104650333/235554473-99461e4a-e982-458b-88a6-c9af3b362d9d.png)
+
+Ao contar os registros, saberemos que apenas 14 clientes receberam nota fiscal. Ou seja, dos 15 cadastrados, 1 deles nunca comprou suco de frutas na nossa empresa.
+
+- Para descobrir quem é esse cliente, primeiro vamos rodar uma consulta com INNER JOIN para descobrir quais registros apresentam correspondências no campo "CPF":
+
+````ruby
+SELECT DISTINCT A.CPF, A.NOME, B.CPF FROM tabela_de_clientes A
+INNER JOIN notas_fiscais B ON A.CPF = B.CPF;
+````
+
+![Captura de tela 2023-05-01 213107](https://user-images.githubusercontent.com/104650333/235554751-0420b774-d944-46a6-920d-125347a693ab.png)
+
+Ou seja, o retorno mostrará os CPFs e os nomes dos clientes para os quais foram emitidas notas - são as 14 pessoas que vimos anteriormente. 
+
+- No entanto, substituindo o INNER JOIN pelo LEFT JOIN, o resultado será diferente:
+
+````ruby
+SELECT DISTINCT A.CPF, A.NOME, B.CPF FROM tabela_de_clientes A
+LEFT JOIN notas_fiscais B ON A.CPF = B.CPF;
+````
+
+![Captura de tela 2023-05-01 213232](https://user-images.githubusercontent.com/104650333/235554888-cdd16d44-5b5a-469c-90cc-843d0ae658c0.png)
+
+Agora, veremos todos os elementos da tabela de clientes e apenas os correspondentes da tabela de notas fiscais. Analisando o resultado, 
+encontraremos o cliente Fábio Carvalho que tem um campo nulo, ou seja, que nunca comprou na empresa, então nunca recebeu nota fiscal e, 
+consequentemente, seu CPF não tem consta na tabela de notas fiscais.
+
+- Desse modo, se o gerente da empresa de sucos nos pedisse para investigar quais clientes cadastrados nunca realizaram uma compra, 
+uma maneira de encontrar a resposta é filtrar os registros que apresentam o campo B.CPF nulo (no caso, apenas o Fábio):
+
+````ruby
+SELECT DISTINCT A.CPF, A.NOME, B.CPF FROM tabela_de_clientes A
+LEFT JOIN notas_fiscais B ON A.CPF = B.CPF
+WHERE B.CPF IS NULL;
+````
+
+![Captura de tela 2023-05-01 213414](https://user-images.githubusercontent.com/104650333/235555075-79e9438e-60e3-40a3-bbb8-eb2b3965a6cf.png)
+
+````
+IS, em inglês, significa "é/está". Logo, no comando WHERE B.CPF IS NULL, buscamos campos que têm valor null.
+````
+
+- Lembrando que sempre temos a opção de incrementar nossos filtros. Um exemplo seria refinar a busca pelo ano da data da venda, que 
+é uma informação que encontramos na tabela de notas fiscais:
+
+````ruby
+SELECT DISTINCT A.CPF, A.NOME, B.CPF FROM tabela_de_clientes A
+LEFT JOIN notas_fiscais B ON A.CPF = B.CPF
+WHERE B.CPF IS NULL AND YEAR(B.DATA_VENDA) = 2015;
+````
+![Captura de tela 2023-05-01 213700](https://user-images.githubusercontent.com/104650333/235555548-41a07bea-ebd2-471d-806d-ff3b138e098f.png)
+
+Nesse caso, utilizamos o operador AND, então nosso retorno será vazio, porque não há registros que atendam às duas condições ao mesmo tempo.
+
+- Quanto ao RIGHT JOIN, sabemos que ele tem quase a mesma mecânica do LEFT JOIN, exceto que trará todos os elementos da tabela à direita 
+do comando JOIN e somente os correspondentes da outra tabela. Para fazer uma demonstração, podemos realizar a mesma consulta que fizemos 
+anteriormente, invertendo os nomes das tabelas:
+
+````ruby
+SELECT DISTINCT A.CPF, A.NOME, B.CPF FROM notas_fiscais B
+RIGHT JOIN tabela_de_clientes A ON A.CPF = B.CPF;
+````
+
+![Captura de tela 2023-05-01 214136](https://user-images.githubusercontent.com/104650333/235555755-21a54ecf-1ac1-4b32-b279-7627ce439aa7.png)
+
+
+Apesar da consulta ligeiramente diferente, como invertemos as tabelas, o resultado é o mesmo que obtivemos com o LEFT JOIN.
