@@ -51,7 +51,7 @@ Finalmente, chegamos nos comandos DCL, ou Data Control Language ("linguagem de c
 
 # Trabalhando
 
-## Select
+## SELECT
 
 ### Considere o seguinte diagrama das tabelas e suas relações preenchidas:
 
@@ -187,7 +187,7 @@ SELECT * FROM tabela_de_clientes WHERE CIDADE IN ('Rio de Janeiro', 'São Paulo'
 ![Captura de tela 2023-05-01 185130](https://user-images.githubusercontent.com/104650333/235537922-1c234f64-7076-42df-b240-382574f28cfa.png)
 
 
-## Like
+## LIKE
 
 Vamos aprender mais um comando que filtra informações de uma seleção: o operador LIKE. Normalmente, ele é usado assim:
 ````ruby
@@ -219,7 +219,7 @@ EMBALAGEM = 'PET';
 
 Ou seja, buscaremos todos os produtos que contêm "Maça" no campo "SABOR" E cuja embalagem é PET.
 
-## Distinct
+## DISTINCT
 
 O comando que vamos aprender é o DISTINCT, que pode ser traduzido como "distinto, diferente". Ele retornará somente linhas com valores diferentes e 
 vamos usá-lo depois do SELECT e antes da exibição dos campos.
@@ -263,7 +263,7 @@ aumenta. Observe que as cinco linhas que apareceram na penúltima seleção tamb
 continuam a atender as condições.
 
 
-## Limit
+## LIMIT
 
 Às vezes, criamos seleções que retornam 1 milhão de registros, mas estamos na fase de desenvolvimento de um projeto e não 
 queremos, de fato, ver 1 milhão de linhas, o objetivo era saber se a consulta funcionaria e se ela traria os dados esperados. 
@@ -747,6 +747,12 @@ Apesar da consulta ligeiramente diferente, como invertemos as tabelas, o resulta
 
 ## FULL E CROSS JOIN
 
+No exercício anterior, por exemplo, apelidamos a tabela de clientes de "A" e a tabela de notas fiscais de "B" e, para nos referir aos seus respectivos campos, usamos essas letras como prefixos (A.NOMEe B.CPF). Agora, veremos que também é possível usar os próprios nomes das tabelas.
+
+Quanto aos prefixos e sufixos, notaremos que eles são obrigatórios somente quando lidamos com campos em comum nas tabelas. Costumamos usá-los porque, em geral, não sabemos de antemão se os campos se repetem, porém por vezes os prefixos são opcionais e vamos demonstrar isso.
+
+Então, começaremos abrindo um novo script no MySQL Workbench e selecionando a tabela de vendedores:
+
 Então, começaremos abrindo um novo script no MySQL Workbench e selecionando a tabela de vendedores:
 
 ````ruby
@@ -872,3 +878,5 @@ tabela_de_clientes.NOME FROM tabela_de_vendedores, tabela_de_clientes;
 ![Captura de tela 2023-05-01 221030](https://user-images.githubusercontent.com/104650333/235558354-810cbb88-ac19-4cb0-b570-294e3483a2db.png)
 ![Captura de tela 2023-05-01 221113](https://user-images.githubusercontent.com/104650333/235558417-4d76e535-e1b2-4b44-88a5-bc5417125d2e.png)
 ![Captura de tela 2023-05-01 221154](https://user-images.githubusercontent.com/104650333/235558488-e519e5d2-2e8c-4767-b526-a114c4ba97bd.png)
+
+
